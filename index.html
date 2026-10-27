@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Traffic Buddy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sweet-brown:#B0323A; --dutch-white:#F0D8C3; --mustard-brown:#C67C00; --gunmetal:#2B3637; --cadet-grey:#8AA8AB;
+  --bg:#2B3637; --panel:rgba(255,255,255,.045); --panel-b:rgba(255,255,255,.09);
+  --cyan:#B0323A; --amber:#C67C00; --red:#B0323A; --green:#8AA8AB;
+  --text:#F0D8C3; --muted:#8AA8AB; --line:rgba(255,255,255,.08);
+  --header-bg:rgba(43,54,55,.82); --nav-bg:rgba(43,54,55,.9);
+  --input-bg:rgba(255,255,255,.045); --hover-bg:rgba(255,255,255,.065);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+html.light{
+  --bg:#F0D8C3; --panel:rgba(255,255,255,.88); --panel-b:rgba(43,54,55,.12);
+  --text:#2B3637; --muted:#2B3637; --line:rgba(43,54,55,.10);
+  --header-bg:rgba(240,216,195,.90); --nav-bg:rgba(255,255,255,.94);
+  --input-bg:rgba(255,255,255,.96); --hover-bg:rgba(255,255,255,1);
+}
+
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:
+  radial-gradient(1100px 500px at 15% -10%, rgba(176,50,58,.10), transparent 60%),
+  radial-gradient(900px 500px at 100% 0%, rgba(198,124,0,.07), transparent 55%),
+  var(--bg);
+  color:var(--text); font-family:Manrope,system-ui,sans-serif; min-height:100%;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+#app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
+.screen{display:none;flex:1;flex-direction:column;padding:20px 18px 90px;animation:fadeUp .35s ease}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.screen{animation:none}}
+
+/* Landing */
+#landing{align-items:center;justify-content:center;text-align:center;padding-top:calc(60px + env(safe-area-inset-top,0px))}
+.logo-badge{font-size:52px;line-height:1;filter:drop-shadow(0 0 24px rgba(176,50,58,.35))}
+.brand{font-size:34px;font-weight:800;margin:14px 0 4px;letter-spacing:-.02em}
+.brand span{color:var(--cyan)}
+.tagline{color:var(--muted);font-size:15px;margin-bottom:2px}
+.subtitle{color:var(--muted);font-size:13.5px;max-width:340px;margin:10px 0 34px;line-height:1.5}
+.select-wrap{width:100%;max-width:360px;position:relative}
+select, input[type=text]{
+  width:100%;padding:15px 16px;border-radius:14px;border:1px solid var(--panel-b);
+  background:var(--bg);backdrop-filter:blur(10px);color:var(--text);font-size:15px;font-weight:600;
+  appearance:none;outline:none;transition:border-color .2s, box-shadow .2s;
+}
+/* Keep native dropdown choices readable in both themes, including dark mode. */
+select option{background:#2B3637;color:#F0D8C3}
+html.light select option{background:#F0D8C3;color:#2B3637}
+.account-form select option{background:var(--bg);color:var(--text)}
+select:focus, input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(176,50,58,.15)}
+.select-wrap::after{content:"▾";position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--cyan);pointer-events:none;font-size:14px}
+
+/* Header */
+header.app-header{
+  position:sticky;top:0;z-index:20;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 12px;
+  background:var(--header-bg);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.hdr-title{font-weight:800;font-size:17px}
+.hdr-title .dot{color:var(--cyan)}
+.state-pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:1px}
+.state-pill b{color:var(--amber);font-weight:700}
+.change-btn{
+  font-size:11.5px;font-weight:700;color:var(--cyan);background:rgba(176,50,58,.1);
+  border:1px solid rgba(176,50,58,.25);padding:7px 11px;border-radius:10px;cursor:pointer;white-space:nowrap;
+}
+.change-btn:hover{background:rgba(176,50,58,.18)}
+
+/* Account + document vault — added without changing existing screen/card UX */
+.account-toggle{
+  position:fixed;
+  top:calc(12px + env(safe-area-inset-top,0px));
+  right:68px;
+  z-index:100;
+  width:46px;
+  height:38px;
+  border:1px solid var(--panel-b);
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--text);
+  backdrop-filter:blur(14px);
+  box-shadow:0 6px 20px rgba(0,0,0,.12);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  transition:transform .15s, background .2s, border-color .2s;
+}
+.account-toggle:hover{transform:translateY(-1px);border-color:var(--cyan)}
+.account-toggle:active{transform:scale(.96)}
+.overlay{
+  position:fixed;inset:0;z-index:200;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+}
+.overlay.open{display:flex}
+.account-panel{
+  width:min(560px,100%);max-height:88vh;overflow:auto;
+  background:var(--bg);border:1px solid var(--panel-b);border-radius:22px;
+  box-shadow:0 24px 70px rgba(0,0,0,.30);padding:20px;
+}
+.account-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.account-head h2{margin:0;font-size:20px}
+.close-x{border:0;background:var(--panel);color:var(--text);border:1px solid var(--panel-b);
+  width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px}
+.account-tabs{display:flex;gap:8px;margin-bottom:16px}
+.account-tab{flex:1;padding:10px;border-radius:11px;border:1px solid var(--panel-b);
+  background:var(--panel);color:var(--muted);font-weight:700;cursor:pointer}
+.account-tab.active{color:var(--cyan);border-color:rgba(176,50,58,.35);background:rgba(176,50,58,.08)}
+.account-form{display:flex;flex-direction:column;gap:11px}
+.account-form label{font-size:12px;color:var(--muted);font-weight:700}
+.account-form input,.account-form select{
+  width:100%;padding:12px 13px;border-radius:11px;border:1px solid var(--panel-b);
+  background:var(--input-bg);color:var(--text);outline:none
+}
+.account-form input:focus,.account-form select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(176,50,58,.12)}
+.password-wrap{position:relative;display:flex;align-items:center}.password-wrap input{padding-right:48px!important}.headlight-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:36px;height:34px;border:1px solid var(--panel-b);border-radius:9px;background:var(--panel);display:grid;place-items:center;cursor:pointer;color:var(--text)}.headlight-toggle svg{width:23px;height:23px}.headlight-toggle .visibility-icon{width:23px;height:23px;display:block}.headlight-toggle.on .eye-open{display:none}.headlight-toggle.on .eye-closed{display:block!important}.headlight-toggle{border:0;background:transparent;border-radius:8px}.headlight-toggle:hover{background:rgba(138,168,171,.18)}.forgot-link{background:none;border:0;color:var(--cyan);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px;padding:0}.account-note{font-size:11.5px;line-height:1.5;color:var(--muted);margin:2px 0}
+.account-error{color:var(--red);font-size:12px;min-height:16px}
+.account-success{color:var(--green);font-size:12px}
+.user-summary{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--panel-b);
+  background:var(--panel);border-radius:15px;margin-bottom:14px}
+.user-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(176,50,58,.12);font-size:21px}
+.user-summary b{display:block;font-size:14px}.user-summary span{font-size:11.5px;color:var(--muted)}
+.vault-section{margin-top:14px}
+.vault-section h3{font-size:15px;margin:0 0 10px}
+.vehicle-card{border:1px solid var(--panel-b);background:var(--panel);border-radius:15px;padding:14px;margin-bottom:10px}
+.vehicle-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.vehicle-head b{font-size:14px}
+.doc-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line)}
+.doc-row:first-child{border-top:0}
+.doc-icon{font-size:18px;width:25px;text-align:center}
+.doc-info{min-width:0;flex:1}.doc-info b{display:block;font-size:12.5px}.doc-info span{display:block;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-actions{display:flex;gap:5px}.mini-btn{border:1px solid var(--panel-b);background:var(--panel);color:var(--text);
+  border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer}
+.mini-btn:hover{border-color:var(--cyan)}
+.doc-empty{color:var(--muted);font-size:12px;padding:8px 0}
+.add-vehicle{margin-top:8px}
+.hidden{display:none!important}
+@media(max-width:520px){
+  .account-panel{padding:16px;border-radius:18px}
+  .account-toggle{right:66px}
+}
+
+/* Theme toggle */
+.theme-toggle{
+  position:fixed;
+  top:calc(12px + env(safe-area-inset-top,0px));
+  right:14px;
+  z-index:100;
+  width:46px;
+  height:38px;
+  border:1px solid var(--panel-b);
+  border-radius:12px;
+  background:var(--panel);
+  color:var(--text);
+  backdrop-filter:blur(14px);
+  box-shadow:0 6px 20px rgba(0,0,0,.12);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  transition:transform .15s, background .2s, border-color .2s;
+}
+.theme-toggle:hover{transform:translateY(-1px);border-color:var(--cyan)}
+.theme-toggle:active{transform:scale(.96)}
+html.light body{
+  background:
+    radial-gradient(1100px 500px at 15% -10%, rgba(176,50,58,.12), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(198,124,0,.10), transparent 55%),
+    var(--bg);
+}
+html.light .send-btn{color:#F0D8C3}
+html.light .btn.primary{color:#F0D8C3}
+html.light .warn-box{color:#2B3637}
+html.light .msg.user{background:linear-gradient(135deg,rgba(176,50,58,.20),rgba(176,50,58,.08))}
+
+/* Cards */
+.card{
+  background:var(--panel);border:1px solid var(--panel-b);border-radius:18px;padding:18px;
+  backdrop-filter:blur(10px);transition:transform .15s, border-color .15s, background .15s; cursor:pointer;
+}
+.card:hover{transform:translateY(-2px);border-color:rgba(176,50,58,.35);background:var(--hover-bg)}
+.big-choice{display:flex;flex-direction:column;gap:14px;margin-top:22px}
+.big-choice .card{display:flex;align-items:center;gap:14px;padding:20px}
+.big-choice .ic{font-size:28px}
+.big-choice h3{margin:0 0 3px;font-size:16.5px}
+.big-choice p{margin:0;color:var(--muted);font-size:13px}
+.section-title{font-size:19px;font-weight:800;margin:4px 0 4px}
+.section-sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+.grid-list{display:flex;flex-direction:column;gap:10px}
+.row-card{
+  display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--panel-b);
+  border-radius:14px;padding:13px 14px;cursor:pointer;transition:border-color .15s, background .15s;
+}
+.row-card:hover{border-color:rgba(176,50,58,.3);background:var(--hover-bg)}
+.row-ic{font-size:20px;width:30px;text-align:center;flex-shrink:0}
+.row-text b{display:block;font-size:14px}
+.row-text span{color:var(--muted);font-size:12px}
+.chev{margin-left:auto;color:var(--muted)}
+
+/* Detail */
+.detail-card{background:var(--panel);border:1px solid var(--panel-b);border-radius:20px;padding:20px;margin-bottom:14px}
+.detail-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.detail-head .ic{font-size:30px}
+.detail-head h2{margin:0;font-size:19px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan);font-weight:700;margin-bottom:4px}
+.field p{margin:0;font-size:14.5px;line-height:1.55;color:var(--text)}
+.penalty-amt{font-size:26px;font-weight:800;color:var(--amber)}
+.penalty-unverified{font-size:14px;font-weight:700;color:var(--muted);font-style:italic}
+.badge{display:inline-block;background:rgba(138,168,171,.12);color:var(--green);border:1px solid rgba(138,168,171,.3);
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.warn-box{background:rgba(198,124,0,.08);border:1px solid rgba(198,124,0,.28);border-radius:14px;padding:13px 14px;font-size:12.5px;color:#C67C00;line-height:1.5;margin-top:6px}
+.source-link{color:var(--cyan);font-size:13px;text-decoration:none;font-weight:600}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{padding:11px 16px;border-radius:12px;font-size:13px;font-weight:700;border:1px solid var(--panel-b);
+  background:var(--panel);color:var(--text);cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--cyan)}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#B0323A);color:#F0D8C3;border:none}
+.btn.primary:hover{filter:brightness(1.08)}
+
+/* Chat */
+#chat-log{flex:1;display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-bottom:10px}
+.msg{max-width:84%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;animation:fadeUp .25s ease}
+.msg.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--panel-b);border-bottom-left-radius:5px}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,rgba(176,50,58,.25),rgba(176,50,58,.12));border:1px solid rgba(176,50,58,.3);border-bottom-right-radius:5px}
+.typing{align-self:flex-start;display:flex;gap:4px;padding:12px 16px;background:var(--panel);border:1px solid var(--panel-b);border-radius:16px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.quick-replies{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0}
+.qr-btn{background:rgba(176,50,58,.08);border:1px solid rgba(176,50,58,.25);color:var(--cyan);
+  padding:8px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.qr-btn:hover{background:rgba(176,50,58,.18)}
+.chat-input-row{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--bg)}
+.chat-input-row input{flex:1}
+.send-btn{background:linear-gradient(135deg,var(--cyan),#B0323A);border:none;border-radius:14px;width:48px;color:#F0D8C3;font-size:18px;cursor:pointer}
+
+/* Bottom nav */
+nav.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:640px;
+  display:flex;justify-content:space-around;padding:10px 6px calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--nav-bg);backdrop-filter:blur(16px);border-top:1px solid var(--line);z-index:30;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;
+  background:none;border:none;cursor:pointer;font-weight:600;font-family:inherit}
+.nav-item.active{color:var(--cyan)}
+.nav-item .n-ic{font-size:19px}
+
+.disclaimer-mini{color:var(--muted);font-size:11px;text-align:center;margin-top:auto;padding-top:18px;line-height:1.5}
+.searchbox-wrap{position:relative;margin-bottom:16px}
+.searchbox-wrap span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.searchbox-wrap input{padding-left:38px}
+.empty-state{text-align:center;color:var(--muted);font-size:13px;padding:30px 10px}
+.back-link{color:var(--cyan);font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:14px;padding:0}
+::-webkit-scrollbar{width:0px}
+
+/* Traffic Buddy palette + signal transition */
+:root{
+  --bg:#2B3637; --panel:rgba(138,168,171,.13); --panel-b:rgba(240,216,195,.22);
+  --cyan:#B0323A; --amber:#C67C00; --red:#B0323A; --green:#8AA8AB;
+  --text:#F0D8C3; --muted:#8AA8AB; --line:rgba(240,216,195,.18);
+  --header-bg:rgba(43,54,55,.94); --nav-bg:rgba(43,54,55,.97);
+  --input-bg:rgba(138,168,171,.13); --hover-bg:rgba(138,168,171,.2);
+}
+html.light{--bg:#F0D8C3;--panel:rgba(138,168,171,.18);--panel-b:rgba(43,54,55,.2);--text:#2B3637;--muted:#526568;--line:rgba(43,54,55,.16);--header-bg:rgba(240,216,195,.96);--nav-bg:rgba(240,216,195,.98);--input-bg:rgba(255,255,255,.35);--hover-bg:rgba(138,168,171,.22)}
+body{background:var(--bg);color:var(--text)}
+#signalTransition{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#2B3637;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s}
+#signalTransition.show{opacity:1;visibility:visible;pointer-events:all}
+.signal-scene{display:flex;align-items:center;flex-direction:column;gap:14px}
+.signal-housing{width:79px;height:209px;padding:7px 9px;border:2px solid #8AA8AB;border-radius:26px;background:#202A2B;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;box-shadow:none}
+.signal-light{width:55px;height:55px;flex:0 0 55px;border-radius:50%;background:#2B3637;border:0;opacity:1;position:relative}
+.signal-light.red{background:#B0323A}
+.signal-light.red:after{content:"";position:absolute;width:15px;height:15px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:#F0D8C3}
+.signal-light.amber{background:#C67C00}
+.signal-light.grey{background:#8AA8AB}
+@keyframes signalBlink{0%,18%,100%{opacity:.48;transform:scale(.96);filter:brightness(.78)}8%,14%{opacity:1;transform:scale(1.04);filter:brightness(1.25)}}
+#signalTransition.show .signal-light.red{animation:signalBlink 1.2s ease-in-out infinite;animation-delay:0s}
+#signalTransition.show .signal-light.amber{animation:signalBlink 1.2s ease-in-out infinite;animation-delay:.22s}
+#signalTransition.show .signal-light.grey{animation:signalBlink 1.2s ease-in-out infinite;animation-delay:.44s}
+#signalTransition.show .signal-light.red:after{animation:signalDotBlink 1.2s ease-in-out infinite}
+@keyframes signalDotBlink{0%,100%{opacity:.65;transform:translate(-50%,-50%) scale(.9)}8%,14%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+.signal-road{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:6px;background:transparent;overflow:visible}
+.signal-road:before,.signal-road:after{content:"";display:block;width:81px;height:6px;border-radius:8px;background:#8AA8AB}
+.signal-road span{display:block;width:28px;height:4px;flex:0 0 28px;border-radius:5px;background:#F0D8C3}
+#signalCaption{font-size:22px;line-height:1.2;font-weight:800;letter-spacing:0;text-transform:uppercase;text-align:center;color:#F0D8C3;margin-top:6px}
+#signalSubcaption{font-size:16px;font-weight:400;line-height:1.4;color:#8AA8AB;text-align:center;margin-top:8px}
+@media(max-width:420px){.signal-housing{width:79px;height:209px}#signalCaption{font-size:21px}#signalSubcaption{font-size:15px}}
+@media(prefers-reduced-motion:reduce){#signalTransition{transition:none}}
+
+
+.official-source-panel{margin-top:12px;padding:14px;border:1px solid var(--panel-b);border-radius:14px;background:var(--panel);font-size:12.5px;line-height:1.55}
+.official-source-panel strong{display:block;margin-bottom:6px;color:var(--text)}
+.official-source-panel a{display:inline-block;margin:5px 10px 0 0;color:var(--cyan);font-weight:700;text-decoration:none}
+.official-source-panel .source-note{color:var(--muted);margin-top:7px}
+.penalty-range{font-size:14px;line-height:1.55;font-weight:700;color:var(--text)}
+
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch to light mode" title="Switch to light mode">☀️</button>
+<button class="account-toggle" id="accountToggle" onclick="openAccount()" aria-label="Login" title="Login">👤</button>
+<div id="signalTransition" aria-hidden="true"><div class="signal-scene"><div class="signal-housing"><span class="signal-light red"></span><span class="signal-light amber"></span><span class="signal-light grey"></span></div><div class="signal-road"><span></span></div></div><div id="signalCaption">TRAFFIC BUDDY</div><div id="signalSubcaption">Moving safely to your next page...</div></div>
+<div id="app">
+
+  <!-- LANDING -->
+  <div class="screen active" id="landing">
+    <div class="logo-badge">🚦</div>
+    <div class="brand">Traffic <span>Buddy</span></div>
+    <div class="tagline">Your Smart Traffic Rules &amp; Challan Assistant</div>
+    <div class="subtitle">Know the rules. Drive safe. Your smart assistant for Indian traffic rules and challan information.</div>
+    <div class="select-wrap">
+      <select id="stateSelect">
+        <option value="">Select your state ▾</option>
+      </select>
+    </div>
+    <p class="disclaimer-mini" style="margin-top:24px;max-width:340px">⚠️ Challan amounts can change with government rules. Always verify with your state's official e‑Challan portal.</p>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="home">
+    <div class="section-title" id="homeGreeting">Great! What would you like to know?</div>
+    <div class="section-sub">Pick an option below, or ask me anything in the Chat tab.</div>
+    <div class="big-choice">
+      <div class="card" onclick="go('rulesList')">
+        <div class="ic">📚</div>
+        <div><h3>Traffic Rules</h3><p>Learn important rules for your state</p></div>
+      </div>
+      <div class="card" onclick="go('challanList')">
+        <div class="ic">💰</div>
+        <div><h3>Challans</h3><p>Check violations &amp; applicable fines</p></div>
+      </div>
+      <div class="card" onclick="go('chat')">
+        <div class="ic">💬</div>
+        <div><h3>Ask Traffic Buddy</h3><p>Chat naturally about any traffic question</p></div>
+      </div>
+    </div>
+    <p class="disclaimer-mini">This app gives general information, not legal advice. Verify current fines with your state traffic police or the Government e‑Challan portal.</p>
+  </div>
+
+  <!-- RULES LIST -->
+  <div class="screen" id="rulesList">
+    <button class="back-link" onclick="go('home')">← Back</button>
+    <div class="section-title">📚 Traffic Rules</div>
+    <div class="section-sub">Tap a category to see the details.</div>
+    <div class="grid-list" id="rulesGrid"></div>
+  </div>
+
+  <!-- RULE DETAIL -->
+  <div class="screen" id="ruleDetail"><div id="ruleDetailBody"></div></div>
+
+  <!-- CHALLAN LIST -->
+  <div class="screen" id="challanList">
+    <button class="back-link" onclick="go('home')">← Back</button>
+    <div class="section-title">💰 Select a Violation</div>
+    <div class="searchbox-wrap">
+      <span>🔎</span>
+      <input type="text" id="violationSearch" placeholder="Search violation..." oninput="renderViolations()">
+    </div>
+    <div class="grid-list" id="violationGrid"></div>
+  </div>
+
+  <!-- CHALLAN DETAIL -->
+  <div class="screen" id="challanDetail"><div id="challanDetailBody"></div></div>
+
+  <!-- CHAT -->
+  <div class="screen" id="chat" style="padding-bottom:80px">
+    <div id="chat-log"></div>
+    <div class="quick-replies" id="quickReplies"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ask about a rule or violation..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="send-btn" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="screen" id="about">
+    <div class="section-title">ℹ️ About Traffic Buddy</div>
+    <div class="detail-card">
+      <div class="field"><label>Purpose</label><p>Traffic Buddy helps you understand Indian traffic rules and look up which challan (fine) may apply to a violation, based on your selected state.</p></div>
+      <div class="field"><label>Accuracy</label><p>This app provides general informational guidance, not legal advice. Central statutory penalties are shown only where a relevant provision can be identified. State compounding amounts, local traffic rules and enforcement schedules can differ and change. This build does not yet contain a fully verified, exhaustive penalty schedule for every state/UT; use the official links on each challan page before relying on an amount.</p></div>
+      <div class="field"><label>Data structure</label><p>Rules and challans are organised as State × Violation records, each with a source link and last-verified date, so they can be corrected or updated without changing the app itself.</p></div>
+      <div class="warn-box">⚠️ Traffic fines and rules may change. Please verify the latest information with the official state traffic police or Government e‑Challan portal (echallan.parivahan.gov.in).</div>
+    </div>
+  </div>
+
+  <header class="app-header" id="topHeader" style="display:none">
+    <div class="hdr-left">
+      <div>
+        <div class="hdr-title">🚦 Traffic Buddy</div>
+        <div class="state-pill">📍 <b id="stateLabel"></b></div>
+      </div>
+    </div>
+    <button class="change-btn" onclick="changeState()">Change State</button>
+  </header>
+
+  <nav class="bottom-nav" id="bottomNav" style="display:none">
+    <button class="nav-item" data-nav="home" onclick="go('home')"><span class="n-ic">🏠</span>Home</button>
+    <button class="nav-item" data-nav="rulesList" onclick="go('rulesList')"><span class="n-ic">📚</span>Rules</button>
+    <button class="nav-item" data-nav="challanList" onclick="go('challanList')"><span class="n-ic">💰</span>Challans</button>
+    <button class="nav-item" data-nav="chat" onclick="go('chat')"><span class="n-ic">💬</span>Chat</button>
+    <button class="nav-item" data-nav="about" onclick="go('about')"><span class="n-ic">ℹ️</span>About</button>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===================== SUPABASE CONFIG ===================== */
+const SUPABASE_URL = "https://drfqixtzsgqufvjtsmzi.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_8FrRxMPmfgl3RjdN2Mu9NQ_IXry-wWb";
+const supabaseClient =
+  (SUPABASE_URL.startsWith("http") && !SUPABASE_PUBLISHABLE_KEY.startsWith("YOUR_"))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+  : null;
+const DOCUMENT_BUCKET = "vehicle-documents";
+
+/* ===================== THEME ===================== */
+function applyTheme(theme){
+  const isLight = theme === 'light';
+  document.documentElement.classList.toggle('light', isLight);
+  const btn = document.getElementById('themeToggle');
+  if(btn){
+    btn.textContent = isLight ? '🌙' : '☀️';
+    btn.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+    btn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+  }
+}
+function toggleTheme(){
+  const next = document.documentElement.classList.contains('light') ? 'dark' : 'light';
+  localStorage.setItem('trafficBuddyTheme', next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem('trafficBuddyTheme') || 'dark');
+
+/* ===================== DATA LAYER =====================
+   Mirrors a states / violations / state_violations schema so it can be
+   swapped for a real Supabase/Postgres backend later without changing the UI.
+   penalty_amount: null  ->  amount not verified for this state; show a
+   "verify with official source" message instead of guessing.
+*/
+const STATES = ["Andhra Pradesh","Telangana","Karnataka","Tamil Nadu","Maharashtra","Delhi","Kerala","Odisha",
+"West Bengal","Uttar Pradesh","Rajasthan","Gujarat","Punjab","Haryana","Madhya Pradesh","Bihar","Chhattisgarh",
+"Jharkhand","Assam","Uttarakhand","Himachal Pradesh","Goa","Puducherry","Chandigarh","Jammu & Kashmir"];
+
+const MORTH_SOURCE = "https://morth.nic.in/sites/default/files/notifications_document/Amendments%20in%20MV%20Act.pdf";
+const PARIVAHAN = "https://echallan.parivahan.gov.in";
+
+const RULE_CATEGORIES = [
+ {ic:"🚘",name:"General Driving Rules",body:"Follow lane discipline, obey posted speed limits, and give way to pedestrians at crossings and zebra lines."},
+ {ic:"🏍️",name:"Two-Wheeler Rules",body:"Riders and pillion riders must wear an ISI-marked helmet, and the vehicle must carry valid RC, insurance and licence."},
+ {ic:"🚗",name:"Car Rules",body:"All occupants in the front seat, and rear seats where required by state rules, must wear seat belts at all times while the vehicle is moving."},
+ {ic:"🚦",name:"Traffic Signal Rules",body:"Stop completely at a red signal before the stop line; do not proceed on amber unless already inside the intersection."},
+ {ic:"🪪",name:"Licence & Documents",body:"Always carry a valid driving licence, RC, insurance certificate and PUC (pollution) certificate, or their DigiLocker/mParivahan equivalents."},
+ {ic:"🛣️",name:"Road Safety Rules",body:"Maintain a safe following distance, use indicators before turning or changing lanes, and never drive against oncoming traffic."},
+ {ic:"🅿️",name:"Parking Rules",body:"Do not park in no-parking zones, in front of gates, on footpaths, or in a way that obstructs traffic flow."},
+ {ic:"🍺",name:"Drunk Driving",body:"Driving with blood alcohol content above the legal limit is a serious offence with escalating penalties for repeat offenders."},
+ {ic:"📱",name:"Mobile Phone Usage",body:"Using a handheld mobile phone for calls or messaging while driving is prohibited; hands-free navigation use is generally permitted."},
+ {ic:"👶",name:"Child Safety",body:"Children must be secured with an appropriate child restraint or safety harness as specified under the Motor Vehicles Act."},
+ {ic:"🪖",name:"Helmet & Seat Belt",body:"Helmets are compulsory for riders and pillions on two-wheelers; seat belts are compulsory for drivers and specified passengers in cars."},
+ {ic:"🚑",name:"Emergency Vehicles",body:"Give way immediately to ambulances, fire engines and police vehicles running with sirens or beacons active."}
+];
+
+// state_violations-style records. Only a couple of states are pre-populated
+// with baseline Central Motor Vehicles Act (2019 amendment) figures as an
+// example; all others intentionally show "verify" until confirmed per-state.
+const VIOLATIONS = [
+ {ic:"🪖",name:"No Helmet",vehicle:"Two-wheeler",desc:"Riding or being a pillion passenger without wearing a helmet.",
+  rule:"Helmets are mandatory for the rider and pillion on two-wheelers under the Motor Vehicles Act and state motor vehicle rules.",
+  base:1000, extra:"Licence may be disqualified for 3 months (as per central provision).", ref:"Motor Vehicles (Amendment) Act, 2019 — Sec. 194D", verified:"2024-04-01"},
+ {ic:"👥",name:"Triple Riding",vehicle:"Two-wheeler",desc:"Carrying more than one pillion passenger on a two-wheeler.",
+  rule:"Two-wheelers are permitted one rider and one pillion passenger only.", base:null, extra:null, ref:"State Motor Vehicle Rules", verified:null},
+ {ic:"📄",name:"No RC",vehicle:"All motor vehicles",desc:"Driving a vehicle without a valid Registration Certificate.",
+  rule:"Every motor vehicle must be registered with the regional transport authority and the RC carried or available digitally.",
+  base:null, extra:"Central statutory range: ₹2,000–₹5,000 for a first offence; ₹5,000–₹10,000 for a subsequent offence. State schedules may set the compounding amount.", ref:"Motor Vehicles Act, 1988 — Sec. 192 (as amended)", verified:null},
+ {ic:"🪪",name:"No Driving Licence",vehicle:"All motor vehicles",desc:"Driving without holding a valid driving licence.",
+  rule:"A valid driving licence for the relevant vehicle class must be held at all times while driving.",
+  base:5000, extra:null, ref:"Motor Vehicles (Amendment) Act, 2019 — Sec. 181", verified:"2024-04-01"},
+ {ic:"🛡️",name:"No Insurance", vehicle:"All motor vehicles",desc:"Driving without a valid third-party insurance policy.",
+  rule:"Third-party insurance is compulsory for every motor vehicle used on public roads.",
+  base:2000, extra:"Community service may be ordered for repeat offences.", ref:"Motor Vehicles (Amendment) Act, 2019 — Sec. 196", verified:"2024-04-01"},
+ {ic:"🚦",name:"Signal Jump",vehicle:"All motor vehicles",desc:"Crossing an intersection against a red traffic signal.",
+  rule:"Vehicles must stop at the stop line when the signal is red and only proceed on green.", base:null, extra:null, ref:"State Motor Vehicle Rules / MV Act Sec. 177", verified:null},
+ {ic:"↔️",name:"Wrong-Side Driving",vehicle:"All motor vehicles",desc:"Driving against the authorised direction of traffic flow.",
+  rule:"Vehicles must always travel within their designated lane and direction of flow.", base:null, extra:null, ref:"State Motor Vehicle Rules", verified:null},
+ {ic:"🚫",name:"No Parking",vehicle:"All motor vehicles",desc:"Parking in a restricted or no-parking zone.",
+  rule:"Parking is prohibited where signage, road markings or local traffic orders restrict it.", base:null, extra:"Vehicle may be towed/clamped.", ref:"State/Municipal Traffic Rules", verified:null},
+ {ic:"📱",name:"Using Mobile While Driving",vehicle:"All motor vehicles",desc:"Using a handheld mobile phone while the vehicle is in motion.",
+  rule:"Handheld phone use for calls, texting or browsing while driving is prohibited.",
+  base:null, extra:"Penalty under Section 184 depends on the circumstances and repeat-offence status; check the central Act and state schedule.", ref:"Motor Vehicles Act, 1988 — Sec. 184 (as amended)", verified:null},
+ {ic:"🍺",name:"Drunk Driving",vehicle:"All motor vehicles",desc:"Driving with blood alcohol content above the permitted legal limit.",
+  rule:"Driving under the influence of alcohol beyond the prescribed limit is a punishable offence, with higher penalties for repeat offences.",
+  base:null, extra:"First offence: up to 6 months imprisonment or ₹10,000 fine or both; subsequent offence: up to 2 years imprisonment or ₹15,000 fine or both (Section 185).", ref:"Motor Vehicles Act, 1988 — Sec. 185 (as amended)", verified:null},
+ {ic:"🚗",name:"Overspeeding",vehicle:"All motor vehicles",desc:"Driving above the posted speed limit for the road/vehicle class.",
+  rule:"Speed limits are set per road type and vehicle category; radar/camera enforcement is common on highways.", base:null, extra:null, ref:"MV Act Sec. 183 / State notifications", verified:null},
+ {ic:"🔴",name:"Red Light Violation",vehicle:"All motor vehicles",desc:"Proceeding through an intersection on a red light.",
+  rule:"Same as signal jump — vehicles must halt fully at red before the stop line.", base:null, extra:null, ref:"MV Act Sec. 177", verified:null},
+ {ic:"🪪",name:"Driving Without Required Documents",vehicle:"All motor vehicles",desc:"Failing to produce licence, RC, insurance or PUC on request.",
+  rule:"Drivers must carry (physically or digitally via DigiLocker/mParivahan) all mandatory documents.", base:null, extra:null, ref:"MV Act Sec. 130", verified:null},
+ {ic:"🔢",name:"Number Plate Violation",vehicle:"All motor vehicles",desc:"Missing, non-standard, or obscured registration number plate.",
+  rule:"Vehicles must display a standard, legible high-security registration plate as prescribed.", base:null, extra:null, ref:"Central Motor Vehicles Rules", verified:null},
+ {ic:"🔊",name:"Illegal / Horn Violation",vehicle:"All motor vehicles",desc:"Using a modified or excessively loud horn, or honking in silence zones.",
+  rule:"Only approved horn types are permitted; honking is restricted near hospitals, schools and silence zones.", base:null, extra:null, ref:"State Motor Vehicle Rules", verified:null},
+ {ic:"💡",name:"Improper / Non-compliant Lights",vehicle:"All motor vehicles",desc:"Using unauthorised, glare-causing, or non-functional lights.",
+  rule:"Vehicle lighting must meet prescribed standards for headlamps, indicators and tail lamps.", base:null, extra:null, ref:"Central Motor Vehicles Rules", verified:null},
+ {ic:"🛣️",name:"Dangerous Driving",vehicle:"All motor vehicles",desc:"Driving in a manner that endangers other road users.",
+  rule:"Reckless or dangerous driving covering excessive speed, weaving or ignoring safety norms is a punishable offence.",
+  base:null, extra:"First offence: ₹1,000–₹5,000 fine and/or imprisonment; subsequent offence: up to ₹10,000 and/or imprisonment, subject to Section 184 and applicable law.", ref:"Motor Vehicles Act, 1988 — Sec. 184 (as amended)", verified:null},
+ {ic:"🚘",name:"Driving Without Seat Belt",vehicle:"Car/four-wheeler",desc:"Driver or specified passenger not wearing a seat belt.",
+  rule:"Seat belts are compulsory for the driver and front-seat passenger; several states extend this to rear seats.",
+  base:1000, extra:null, ref:"Motor Vehicles (Amendment) Act, 2019 — Sec. 194B", verified:"2024-04-01"},
+ {ic:"🏍️",name:"Riding Without Required Safety Equipment",vehicle:"Two-wheeler",desc:"Missing mandated safety gear such as rear-view mirrors or reflectors.",
+  rule:"Two-wheelers must be fitted with prescribed safety equipment including mirrors and reflectors.", base:null, extra:null, ref:"Central Motor Vehicles Rules", verified:null},
+ {ic:"📋",name:"Other Traffic Violations",vehicle:"All motor vehicles",desc:"Any other offence under the Motor Vehicles Act not listed above.",
+  rule:"General offences (e.g. obstructing traffic, disobeying an officer's direction) fall under residual provisions of the Act.", base:null, extra:null, ref:"MV Act Sec. 177 (general provision)", verified:null},
+];
+
+let currentState = null;
+let recentlyViewed = [];
+
+/* ===================== NAV ===================== */
+let signalTransitionTimer = null;
+function go(id){
+  const current = document.querySelector('.screen.active');
+  const overlay = document.getElementById('signalTransition');
+  const shouldAnimate = current && current.id !== id && current.id !== 'landing';
+  if(signalTransitionTimer) clearTimeout(signalTransitionTimer);
+  if(shouldAnimate && overlay){
+    const lights = overlay.querySelectorAll('.signal-light');
+    lights.forEach(light=>light.classList.remove('active'));
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    const destination = id==='rulesList'?'Traffic Rules':id==='challanList'?'Challans':id==='chat'?'Traffic Buddy Chat':id==='about'?'About Traffic Buddy':id==='home'?'Home':id==='ruleDetail'?'Rule Details':id==='challanDetail'?'Challan Details':'Details';
+    document.getElementById('signalCaption').textContent = 'TRAFFIC BUDDY';
+    document.getElementById('signalSubcaption').textContent = 'Moving safely to ' + destination + '...';
+    signalTransitionTimer = setTimeout(()=>{
+      overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true');
+    },1250);
+    // The three lights pulse in sequence while the transition overlay is visible.
+  }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.nav===id));
+  if(id==='rulesList') renderRules();
+  if(id==='challanList') renderViolations();
+  if(id==='chat' && !document.getElementById('chat-log').childElementCount) initChat();
+  window.scrollTo(0,0);
+}
+
+function changeState(){
+  currentState = null; recentlyViewed=[];
+  document.getElementById('topHeader').style.display='none';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('chat-log').innerHTML='';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('landing').classList.add('active');
+  document.getElementById('stateSelect').value='';
+}
+
+/* populate state dropdown */
+const sel = document.getElementById('stateSelect');
+STATES.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+sel.addEventListener('change', e=>{
+  if(!e.target.value) return;
+  currentState = e.target.value;
+  document.getElementById('stateLabel').textContent = currentState;
+  document.getElementById('homeGreeting').textContent = `Great! You selected ${currentState}. What would you like to know?`;
+  document.getElementById('topHeader').style.display='flex';
+  document.getElementById('bottomNav').style.display='flex';
+  go('home');
+});
+
+/* ===================== RULES ===================== */
+function renderRules(){
+  const grid = document.getElementById('rulesGrid'); grid.innerHTML='';
+  RULE_CATEGORIES.forEach((r,i)=>{
+    const el = document.createElement('div'); el.className='row-card';
+    el.innerHTML = `<div class="row-ic">${r.ic}</div><div class="row-text"><b>${r.name}</b><span>Tap to view details</span></div><div class="chev">›</div>`;
+    el.onclick = ()=> showRuleDetail(i);
+    grid.appendChild(el);
+  });
+}
+function showRuleDetail(i){
+  const r = RULE_CATEGORIES[i];
+  document.getElementById('ruleDetailBody').innerHTML = `
+    <button class="back-link" onclick="go('rulesList')">← Back</button>
+    <div class="detail-card">
+      <div class="detail-head"><div class="ic">${r.ic}</div><h2>${r.name}</h2></div>
+      <div class="field"><label>Rule</label><p>${r.body}</p></div>
+      <div class="field"><label>Why it matters</label><p>Following this rule reduces accident risk and keeps you compliant during checks or e-challan enforcement.</p></div>
+      <div class="field"><label>Applicable to</label><p>${r.name.includes('Two-Wheeler')||r.name.includes('Helmet')?'Two-wheelers':'All motor vehicles (state rules may vary)'}</p></div>
+      <div class="field"><label>Possible penalty</label><p class="penalty-unverified">Varies by state — check the Challans section for ${currentState}.</p></div>
+      <div class="field"><label>Source</label><p><a class="source-link" href="${MORTH_SOURCE}" target="_blank" rel="noopener">Ministry of Road Transport &amp; Highways (MoRTH) →</a></p></div>
+      <div class="warn-box">⚠️ Rules and fines can change. Verify with your state's official traffic department.</div>
+    </div>`;
+  go('ruleDetail');
+}
+
+/* ===================== CHALLANS ===================== */
+function renderViolations(){
+  const q = (document.getElementById('violationSearch')?.value || '').toLowerCase();
+  const grid = document.getElementById('violationGrid'); grid.innerHTML='';
+  const filtered = VIOLATIONS.filter(v=> v.name.toLowerCase().includes(q));
+  if(!filtered.length){ grid.innerHTML = '<div class="empty-state">No matching violation found. Try a different term.</div>'; return; }
+  filtered.forEach(v=>{
+    const el = document.createElement('div'); el.className='row-card';
+    el.innerHTML = `<div class="row-ic">${v.ic}</div><div class="row-text"><b>${v.name}</b><span>${v.vehicle}</span></div><div class="chev">›</div>`;
+    el.onclick = ()=> showChallanDetail(v.name);
+    grid.appendChild(el);
+  });
+}
+function showChallanDetail(name){
+  const v = VIOLATIONS.find(x=>x.name===name);
+  if(!v){ return; }
+  recentlyViewed = [name, ...recentlyViewed.filter(n=>n!==name)].slice(0,5);
+  const STATUTORY_PENALTIES = {
+    'No Helmet': '₹1,000 fine; driving licence may be disqualified for up to 3 months (Motor Vehicles Act, Section 194D). State compounding amounts may differ.',
+    'No RC': 'First offence: ₹2,000–₹5,000. Subsequent offence: ₹5,000–₹10,000 and/or imprisonment as provided by Section 192. Confirm vehicle/category applicability and current state order.',
+    'No Driving Licence': 'Up to 3 months imprisonment, or ₹5,000 fine, or both (Section 181). This is the statutory penalty, not necessarily the state’s spot-compounding amount.',
+    'No Insurance': 'First offence: up to 3 months imprisonment or ₹2,000 fine or both; subsequent offence: up to 3 months imprisonment or ₹4,000 fine or both (Section 196).',
+    'Using Mobile While Driving': 'Hand-held device use is included in dangerous driving under Section 184. Penalty can be ₹1,000–₹5,000 and/or imprisonment for a first offence; repeat offences carry higher penalties. Exact application depends on the circumstances and current law.',
+    'Drunk Driving': 'First offence: up to 6 months imprisonment or ₹10,000 fine or both; subsequent offence: up to 2 years imprisonment or ₹15,000 fine or both (Section 185).',
+    'Driving Without Seat Belt': '₹1,000 fine under Section 194B, subject to applicable current amendments and state enforcement rules.',
+    'Dangerous Driving': 'First offence: imprisonment from 6 months up to 1 year, or ₹1,000–₹5,000 fine, or both; subsequent offence: up to 2 years imprisonment or ₹10,000 fine or both (Section 184). Court handling may apply.',
+    'Signal Jump': 'Red-light jumping is listed as dangerous driving in Section 184. The penalty can depend on the facts and the state’s enforcement/compounding process; verify the issued challan or current official state schedule.',
+    'Red Light Violation': 'Red-light jumping is listed as dangerous driving in Section 184. The penalty can depend on the facts and the state’s enforcement/compounding process; verify the issued challan or current official state schedule.'
+  };
+  // Amounts below are displayed in Indian Rupees (INR). Delhi amounts are
+  // taken from the Delhi Traffic Police published schedule; court challans
+  // intentionally remain court-determined. Other states show central statutory
+  // provisions only where a central figure is supported, never an invented state rate.
+  const DELHI_PENALTIES = {
+    'No Helmet': '₹1,000 (rider/pillion; Delhi Traffic Police schedule)',
+    'Triple Riding': '₹1,000 (Delhi Traffic Police schedule)',
+    'No RC': '₹5,000 first offence; ₹10,000 subsequent offence (Delhi schedule)',
+    'No Driving Licence': '₹5,000 (Delhi Traffic Police schedule; Section 3/181)',
+    'No Insurance': '₹2,000 first offence; ₹4,000 subsequent offence (Delhi schedule)',
+    'Signal Jump': 'Court challan — final amount determined by the court (Delhi schedule)',
+    'Red Light Violation': 'Court challan — final amount determined by the court (Delhi schedule)',
+    'Using Mobile While Driving': '₹5,000 first offence; ₹10,000 subsequent offence (Delhi schedule)',
+    'Drunk Driving': 'Court challan — final amount determined by the court (Delhi schedule)',
+    'Overspeeding': '₹2,000 for LMV; ₹4,000 for MMV/HTV (Delhi schedule)',
+    'Driving Without Seat Belt': '₹1,000 (Delhi Traffic Police schedule)',
+    'Dangerous Driving': 'Court challan — final amount determined by the court (Delhi schedule)',
+    'Number Plate Violation': '₹5,000 first offence; ₹10,000 subsequent offence (Delhi schedule)'
+  };
+  const isDelhi = currentState === 'Delhi';
+  const stateText = isDelhi ? DELHI_PENALTIES[v.name] : null;
+  const statutoryText = STATUTORY_PENALTIES[v.name];
+  const penaltyHtml = stateText
+    ? `<div class="penalty-range">${stateText}</div><span class="badge">Delhi official schedule</span>`
+    : statutoryText
+      ? `<div class="penalty-range">${statutoryText}</div><span class="badge">Central statutory provision — INR</span><p class="source-note">This is a central statutory provision, not a verified state-specific compounding/spot-fine amount for ${currentState || 'your state'}.</p>`
+      : `<div class="penalty-unverified">State-specific amount not verified for ${currentState || 'the selected state'}. No amount is guessed. Check the official state schedule or the issued e-Challan.</div>`;
+  document.getElementById('challanDetailBody').innerHTML = `
+    <button class="back-link" onclick="go('challanList')">← Back</button>
+    <div class="detail-card">
+      <div class="detail-head"><div class="ic">${v.ic}</div><h2>${v.name.toUpperCase()}</h2></div>
+      <div class="field"><label>State</label><p>${currentState || 'Not selected'}</p></div>
+      <div class="field"><label>Violation</label><p>${v.desc}</p></div>
+      <div class="field"><label>Challan / Penalty</label>${penaltyHtml}</div>
+      ${v.extra ? `<div class="field"><label>Additional action</label><p>${v.extra}</p></div>` : ''}
+      <div class="field"><label>Applicable vehicle</label><p>${v.vehicle}</p></div>
+      <div class="field"><label>Rule</label><p>${v.rule}</p></div>
+      <div class="field"><label>Rule reference</label><p class="mono" style="font-size:12.5px;color:var(--muted)">${v.ref}</p></div>
+      <div class="field"><label>Last verified</label><p>${v.verified || 'Not yet verified for this state'}</p></div>
+      <div class="official-source-panel">
+        <strong>Official verification for ${currentState || 'your state'}</strong>
+        <a href="https://echallan.parivahan.gov.in/" target="_blank" rel="noopener">National e-Challan portal ↗</a>
+        <a href="https://mparivahan.parivahan.gov.in/" target="_blank" rel="noopener">MoRTH mParivahan state directory ↗</a>
+        ${currentState === 'Delhi' ? '<a href="https://traffic.delhipolice.gov.in/en/traffic-violations-penalties" target="_blank" rel="noopener">Delhi Traffic Police official penalty schedule ↗</a>' : ''}
+        ${currentState === 'Maharashtra' ? '<a href="https://transport.maharashtra.gov.in/1112/Offences-and-Penalties" target="_blank" rel="noopener">Maharashtra Transport offences & penalties ↗</a>' : ''}
+        <div class="source-note">Important: the national portal is for checking actual challans, not a complete public penalty schedule for every state. State compounding amounts and local rules can differ. This build only labels a figure as verified when a matching official source is available; do not treat an unverified entry as an exact state fine.</div>
+      </div>
+      <div class="warn-box">⚠️ All money amounts use Indian Rupees (₹ / INR). Delhi figures shown above are from the Delhi Traffic Police published schedule. For other states, central statutory provisions are shown only where supported; state-specific spot-fines/compounding amounts are marked unverified until matched to a current official state notification. Court challans do not have a fixed amount in this schedule. Last reviewed: 27 October 2026.</div>
+      <div class="btn-row">
+        <button class="btn" onclick="go('challanList')">🔙 Back</button>
+        <button class="btn" onclick="document.getElementById('violationSearch').value='';go('challanList')">🔎 Check Another</button>
+        <a class="btn primary" style="text-decoration:none;display:inline-flex;align-items:center" href="${PARIVAHAN}" target="_blank" rel="noopener">📖 View Source</a>
+      </div>
+    </div>`;
+  go('challanDetail');
+}
+
+/* ===================== CHAT ===================== */
+const QUICK = ["Traffic Rules","Check Challan","No Helmet","Signal Jump","Driving Licence","Insurance","RC","Change State"];
+function initChat(){
+  document.getElementById('quickReplies').innerHTML = QUICK.map(q=>`<button class="qr-btn" onclick="handleQuick('${q.replace(/'/g,"\\'")}')">${q}</button>`).join('');
+  addMsg('bot', `Hi! I'm Traffic Buddy 🚦 You're set to <b>${currentState}</b>. Ask me about any rule or violation, e.g. "What is the fine for no helmet?"`);
+}
+function addMsg(who, html){
+  const log = document.getElementById('chat-log');
+  const el = document.createElement('div'); el.className = 'msg '+who; el.innerHTML = html;
+  log.appendChild(el); log.scrollTop = log.scrollHeight;
+}
+function showTyping(){
+  const log = document.getElementById('chat-log');
+  const el = document.createElement('div'); el.className='typing'; el.id='typingInd';
+  el.innerHTML='<span></span><span></span><span></span>'; log.appendChild(el); log.scrollTop=log.scrollHeight;
+}
+function hideTyping(){ document.getElementById('typingInd')?.remove(); }
+
+function handleQuick(q){
+  if(q==='Change State'){ changeState(); return; }
+  if(q==='Traffic Rules'){ addMsg('user', q); go('rulesList'); return; }
+  if(q==='Check Challan'){ addMsg('user', q); go('challanList'); return; }
+  document.getElementById('chatInput').value = q;
+  sendChat();
+}
+function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim(); if(!text) return;
+  addMsg('user', text); input.value='';
+  showTyping();
+  setTimeout(()=>{ hideTyping(); addMsg('bot', botReply(text)); }, 550);
+}
+function botReply(text){
+  const t = text.toLowerCase();
+  if(t.includes('rc') && !t.includes('drc')) return matchViolationReply('No RC', "RC stands for Registration Certificate — the document proving a vehicle is registered with the transport authority. Driving without it is an offence.");
+  if(t.includes('helmet')) return matchViolationReply('No Helmet');
+  if(t.includes('signal') || t.includes('red light')) return matchViolationReply('Signal Jump');
+  if(t.includes('licence') || t.includes('license')) return matchViolationReply('No Driving Licence');
+  if(t.includes('insurance')) return matchViolationReply('No Insurance');
+  if(t.includes('drunk') || t.includes('alcohol')) return matchViolationReply('Drunk Driving');
+  if(t.includes('seat belt') || t.includes('seatbelt')) return matchViolationReply('Driving Without Seat Belt');
+  if(t.includes('mobile') || t.includes('phone')) return matchViolationReply('Using Mobile While Driving');
+  if(t.includes('speed')) return matchViolationReply('Overspeeding');
+  if(t.includes('triple')) return matchViolationReply('Triple Riding');
+  if(t.includes('park')) return matchViolationReply('No Parking');
+  const found = VIOLATIONS.find(v=> t.includes(v.name.toLowerCase()));
+  if(found) return matchViolationReply(found.name);
+  return `I couldn't find a verified current entry for this in ${currentState}. Please check the official traffic department or the <a class="source-link" href="${PARIVAHAN}" target="_blank" rel="noopener">e-Challan portal</a>, or try the Challans tab to search directly.`;
+}
+function matchViolationReply(name, prefix){
+  const v = VIOLATIONS.find(x=>x.name===name); if(!v) return "I don't have a verified entry for that yet.";
+  const amt = v.base ? `₹${v.base.toLocaleString('en-IN')} (Central MV Act baseline — always confirm the current ${currentState}-specific amount)` : "not verified for this state — please check the official e-Challan portal";
+  const lead = prefix ? prefix+" " : `You selected ${currentState}. `;
+  return `${lead}For <b>${v.name}</b>: ${v.rule} The applicable penalty is <b>${amt}</b>. <br><br><span style="color:var(--muted);font-size:12px">Tap Check Another below or open the Challans tab for full details.</span>
+  <div class="btn-row" style="margin-top:10px"><button class="btn" onclick="showChallanDetail('${v.name}')">View full details</button></div>`;
+}
+
+
+/* ===================== SUPABASE ACCOUNT + DOCUMENT VAULT ===================== */
+let activeVehicleId = null;
+
+function sbReady(){
+  if(!supabaseClient){
+    alert("Supabase is not configured yet. Add your Supabase Project URL and Publishable Key at the top of this HTML file.");
+    return false;
+  }
+  return true;
+}
+async function getCurrentUser(){
+  if(!supabaseClient) return null;
+  const {data:{user},error}=await supabaseClient.auth.getUser();
+  return error ? null : user;
+}
+async function openAccount(){
+  document.getElementById('accountOverlay').classList.add('open');
+  await renderAccount();
+}
+function closeAccount(){document.getElementById('accountOverlay').classList.remove('open');}
+async function renderAccount(){
+  const user=await getCurrentUser();
+  document.getElementById('authView').classList.toggle('hidden',!!user);
+  document.getElementById('profileView').classList.toggle('hidden',!user);
+  document.getElementById('accountPanelTitle').textContent=user?'My Traffic Buddy':'Traffic Buddy Account';
+  if(user){
+    const {data:profile}=await supabaseClient.from('profiles').select('full_name').eq('id',user.id).maybeSingle();
+    document.getElementById('profileName').textContent=profile?.full_name||user.user_metadata?.full_name||'User';
+    document.getElementById('profileEmail').textContent=user.email||'';
+    await renderVehicles();
+  }
+}
+function showAuthTab(tab){
+  const login=tab==='login';
+  document.getElementById('loginForm').classList.toggle('hidden',!login);
+  document.getElementById('registerForm').classList.toggle('hidden',login);
+  document.getElementById('loginTab').classList.toggle('active',login);
+  document.getElementById('registerTab').classList.toggle('active',!login);
+  document.getElementById('loginError').textContent='';
+  document.getElementById('registerError').textContent='';
+}
+function togglePassword(inputId,button){
+  const input=document.getElementById(inputId);const showing=input.type==='password';input.type=showing?'text':'password';
+  button.classList.toggle('on',showing);button.setAttribute('aria-label',showing?'Hide password':'Show password');button.title=showing?'Hide password':'Show password';
+}
+function toggleForgot(show){document.getElementById('forgotPanel').classList.toggle('hidden',!show);if(show){document.getElementById('recoveryEmail').value=document.getElementById('loginEmail').value.trim();document.getElementById('recoveryError').textContent='';}}
+function switchRecoveryMethod(){const mobile=document.getElementById('recoveryMethod').value==='mobile';document.getElementById('recoveryEmailWrap').classList.toggle('hidden',mobile);document.getElementById('recoveryPhoneWrap').classList.toggle('hidden',!mobile);document.getElementById('smsVerifyPanel').classList.add('hidden');document.getElementById('recoveryError').textContent='';}
+async function sendRecovery(){
+  if(!sbReady())return;const method=document.getElementById('recoveryMethod').value;const msg=document.getElementById('recoveryError');const btn=document.getElementById('sendRecoveryBtn');msg.className='account-error';
+  try{
+    if(method==='email'){
+      const email=document.getElementById('recoveryEmail').value.trim().toLowerCase();if(!email){msg.textContent='Enter the email linked to your account.';return;}
+      const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});if(error)throw error;
+      msg.className='account-success';msg.textContent='If an account exists for that email, a password reset link has been sent. Check your inbox and spam folder.';
+    }else{
+      const phone=document.getElementById('recoveryPhone').value.trim();if(!/^\+[1-9]\d{7,14}$/.test(phone)){msg.textContent='Enter a valid number in international format, e.g. +919876543210.';return;}
+      const {error}=await supabaseClient.auth.signInWithOtp({phone,options:{shouldCreateUser:false}});if(error)throw error;
+      document.getElementById('smsVerifyPanel').classList.remove('hidden');msg.className='account-success';msg.textContent='If this mobile number is registered and SMS authentication is configured, a verification code will be sent. Enter it below to set a new password.';
+    }
+  }catch(e){msg.textContent=e.message||'Could not send recovery message. Check your Supabase Auth configuration.';}
+}
+async function verifySmsRecovery(){
+  if(!sbReady())return;const phone=document.getElementById('recoveryPhone').value.trim();const token=document.getElementById('recoveryOtp').value.trim();const password=document.getElementById('recoveryNewPassword').value;const msg=document.getElementById('recoveryError');
+  if(!token||password.length<6){msg.textContent='Enter the SMS code and a password of at least 6 characters.';return;}
+  try{const {error:verifyError}=await supabaseClient.auth.verifyOtp({phone,token,type:'sms'});if(verifyError)throw verifyError;const {error:updateError}=await supabaseClient.auth.updateUser({password});if(updateError)throw updateError;msg.className='account-success';msg.textContent='Password updated successfully. You can now log in with your new password.';document.getElementById('smsVerifyPanel').classList.add('hidden');}
+  catch(e){msg.className='account-error';msg.textContent=e.message||'Could not verify the code or update the password.';}
+}
+async function registerUser(e){
+  e.preventDefault();if(!sbReady())return;
+  const name=document.getElementById('registerName').value.trim();const email=document.getElementById('registerEmail').value.trim().toLowerCase();const age=Number(document.getElementById('registerAge').value);const phone=document.getElementById('registerPhone').value.trim();const password=document.getElementById('registerPassword').value;const confirm=document.getElementById('registerConfirmPassword').value;const err=document.getElementById('registerError');
+  err.className='account-error';if(password!==confirm){err.textContent='Passwords do not match. Please re-enter your password.';return;}if(!Number.isInteger(age)||age<13||age>120){err.textContent='Enter a valid age (13–120).';return;}if(phone.replace(/\D/g,'').length<8){err.textContent='Enter a valid mobile number.';return;}
+  const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name,age,mobile_number:phone}}});
+  if(error){err.textContent=error.message;return;}e.target.reset();if(data.session)await renderAccount();else{err.className='account-success';err.textContent='Account created. Check your email to confirm your account, then log in.';}
+}
+async function loginUser(e){
+  e.preventDefault(); if(!sbReady())return;
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password=document.getElementById('loginPassword').value;
+  const err=document.getElementById('loginError');
+  const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(error){err.textContent=error.message;return;}
+  e.target.reset(); await renderAccount();
+}
+async function logoutUser(){
+  if(!sbReady())return;
+  await supabaseClient.auth.signOut(); await renderAccount();
+}
+function showAddVehicle(){document.getElementById('addVehicleForm').classList.remove('hidden');document.getElementById('vehicleError').textContent='';}
+function hideAddVehicle(){document.getElementById('addVehicleForm').classList.add('hidden');document.getElementById('vehicleError').textContent='';}
+async function addVehicle(){
+  const user=await getCurrentUser();if(!user)return;
+  const name=document.getElementById('vehicleName').value.trim();
+  const reg=document.getElementById('vehicleReg').value.trim().toUpperCase();
+  const type=document.getElementById('vehicleType').value;
+  const err=document.getElementById('vehicleError');
+  if(!name||!reg){err.textContent='Enter the vehicle name and registration number.';return;}
+  const {error}=await supabaseClient.from('vehicles').insert({user_id:user.id,vehicle_name:name,registration_number:reg,vehicle_type:type});
+  if(error){err.textContent=error.message;return;}
+  document.getElementById('vehicleName').value='';document.getElementById('vehicleReg').value='';
+  hideAddVehicle();await renderVehicles();
+}
+async function removeVehicle(vehicleId){
+  if(!confirm('Remove this vehicle and its document records?'))return;
+  const user=await getCurrentUser();if(!user)return;
+  const {data:docs}=await supabaseClient.from('vehicle_documents').select('storage_path').eq('vehicle_id',vehicleId).eq('user_id',user.id);
+  if(docs?.length)await supabaseClient.storage.from(DOCUMENT_BUCKET).remove(docs.map(d=>d.storage_path));
+  await supabaseClient.from('vehicle_documents').delete().eq('vehicle_id',vehicleId).eq('user_id',user.id);
+  await supabaseClient.from('vehicles').delete().eq('id',vehicleId).eq('user_id',user.id);
+  await renderVehicles();
+}
+function openDocumentUpload(vehicleId){
+  activeVehicleId=vehicleId;
+  document.getElementById('documentError').textContent='';
+  document.getElementById('documentError').className='account-error';
+  document.getElementById('documentOverlay').classList.add('open');
+}
+function closeDocumentUpload(){
+  document.getElementById('documentOverlay').classList.remove('open');
+  activeVehicleId=null;document.getElementById('documentFile').value='';
+}
+async function saveDocument(){
+  const user=await getCurrentUser();if(!user||!activeVehicleId)return;
+  const file=document.getElementById('documentFile').files[0];
+  const type=document.getElementById('documentType').value;
+  const number=document.getElementById('documentNumber').value.trim();
+  const expiry=document.getElementById('documentExpiry').value||null;
+  const err=document.getElementById('documentError');
+  if(!file){err.textContent='Please choose a PDF or image file.';return;}
+  if(file.size>10*1024*1024){err.textContent='Please keep the file below 10 MB.';return;}
+  const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path=`${user.id}/${activeVehicleId}/${crypto.randomUUID()}-${safeName}`;
+  const {error:uploadError}=await supabaseClient.storage.from(DOCUMENT_BUCKET).upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});
+  if(uploadError){err.textContent=uploadError.message;return;}
+  const {error:dbError}=await supabaseClient.from('vehicle_documents').insert({
+    user_id:user.id,vehicle_id:activeVehicleId,document_type:type,document_number:number||null,
+    expiry_date:expiry,original_file_name:file.name,storage_path:path,mime_type:file.type||null,file_size:file.size
+  });
+  if(dbError){await supabaseClient.storage.from(DOCUMENT_BUCKET).remove([path]);err.textContent=dbError.message;return;}
+  closeDocumentUpload();await renderVehicles();
+}
+async function renderVehicles(){
+  const user=await getCurrentUser();if(!user)return;
+  const list=document.getElementById('vehiclesList');
+  const {data:vehicles,error}=await supabaseClient.from('vehicles').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  if(error){list.innerHTML=`<div class="doc-empty">${escapeHtml(error.message)}</div>`;return;}
+  if(!vehicles?.length){list.innerHTML='<div class="doc-empty">No vehicles added yet. Add your first vehicle to store its documents.</div>';return;}
+  list.innerHTML='';
+  for(const v of vehicles){
+    const {data:docs}=await supabaseClient.from('vehicle_documents').select('*').eq('vehicle_id',v.id).eq('user_id',user.id).order('created_at',{ascending:false});
+    const card=document.createElement('div');card.className='vehicle-card';
+    card.innerHTML=`<div class="vehicle-head"><div><b>${escapeHtml(v.vehicle_name)}</b><div style="color:var(--muted);font-size:11px">${escapeHtml(v.registration_number)} · ${escapeHtml(v.vehicle_type)}</div></div><button class="mini-btn" onclick="removeVehicle('${v.id}')">Remove</button></div><div class="docs-${v.id}"></div><button class="mini-btn" onclick="openDocumentUpload('${v.id}')">＋ Add Document</button>`;
+    list.appendChild(card);
+    const wrap=card.querySelector('.docs-'+v.id);
+    if(!docs?.length)wrap.innerHTML='<div class="doc-empty">No documents stored for this vehicle.</div>';
+    else docs.forEach(d=>{
+      const row=document.createElement('div');row.className='doc-row';
+      row.innerHTML=`<div class="doc-icon">📄</div><div class="doc-info"><b>${escapeHtml(d.document_type)}</b><span>${escapeHtml(d.original_file_name)}${d.expiry_date?' · Expires '+escapeHtml(d.expiry_date):''}</span></div><div class="doc-actions"><button class="mini-btn" onclick="viewDocument('${d.id}')">View</button><button class="mini-btn" onclick="removeDocument('${d.id}')">Delete</button></div>`;
+      wrap.appendChild(row);
+    });
+  }
+}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function viewDocument(id){
+  const user=await getCurrentUser();if(!user)return;
+  const {data:d,error}=await supabaseClient.from('vehicle_documents').select('*').eq('id',id).eq('user_id',user.id).single();
+  if(error||!d)return;
+  const {data,error:downloadError}=await supabaseClient.storage.from(DOCUMENT_BUCKET).download(d.storage_path);
+  if(downloadError){alert(downloadError.message);return;}
+  const url=URL.createObjectURL(data);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function removeDocument(id){
+  const user=await getCurrentUser();if(!user)return;
+  if(!confirm('Delete this document?'))return;
+  const {data:d}=await supabaseClient.from('vehicle_documents').select('storage_path').eq('id',id).eq('user_id',user.id).single();
+  if(!d)return;
+  const {error:storageError}=await supabaseClient.storage.from(DOCUMENT_BUCKET).remove([d.storage_path]);
+  if(storageError){alert(storageError.message);return;}
+  const {error}=await supabaseClient.from('vehicle_documents').delete().eq('id',id).eq('user_id',user.id);
+  if(error)alert(error.message);await renderVehicles();
+}
+if(supabaseClient)supabaseClient.auth.onAuthStateChange(()=>setTimeout(renderAccount,0));
+renderAccount();
+
+</script>
+
+<!-- ACCOUNT / LOGIN OVERLAY -->
+<div class="overlay" id="accountOverlay" onclick="if(event.target===this)closeAccount()">
+  <div class="account-panel">
+    <div class="account-head">
+      <h2 id="accountPanelTitle">Traffic Buddy Account</h2>
+      <button class="close-x" onclick="closeAccount()">✕</button>
+    </div>
+
+    <div id="authView">
+      <div class="account-tabs">
+        <button class="account-tab active" id="loginTab" onclick="showAuthTab('login')">Login</button>
+        <button class="account-tab" id="registerTab" onclick="showAuthTab('register')">Create Account</button>
+      </div>
+
+      <form class="account-form" id="loginForm" onsubmit="loginUser(event)">
+        <label>Email
+          <input id="loginEmail" type="email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label>Password
+          <div class="password-wrap"><input id="loginPassword" type="password" required autocomplete="current-password" placeholder="Enter password"><button class="headlight-toggle" type="button" aria-label="Show password" title="Headlight off — password hidden" onclick="togglePassword('loginPassword',this)"><svg class="visibility-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="eye-open"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></g><g class="eye-closed" style="display:none"><path d="M3 3 21 21"/><path d="M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.9M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.4 4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></g></svg></button></div>
+        </label>
+        <button class="forgot-link" type="button" onclick="toggleForgot(true)">Forgot password?</button>
+        <div id="forgotPanel" class="account-form hidden" style="padding:12px;border:1px solid var(--panel-b);border-radius:12px;background:var(--panel)">
+          <label>Recover using
+            <select id="recoveryMethod" onchange="switchRecoveryMethod()"><option value="email">Email message</option><option value="mobile">Mobile number (SMS)</option></select>
+          </label>
+          <label id="recoveryEmailWrap">Account email<input id="recoveryEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
+          <label id="recoveryPhoneWrap" class="hidden">Mobile number with country code<input id="recoveryPhone" type="tel" placeholder="+91XXXXXXXXXX" autocomplete="tel"></label>
+          <button class="btn" id="sendRecoveryBtn" type="button" onclick="sendRecovery()">Send recovery message</button>
+          <div id="smsVerifyPanel" class="hidden">
+            <label>SMS verification code<input id="recoveryOtp" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter code"></label>
+            <label>New password<div class="password-wrap"><input id="recoveryNewPassword" type="password" minlength="6" placeholder="At least 6 characters"><button class="headlight-toggle" type="button" aria-label="Show password" title="Headlight off — password hidden" onclick="togglePassword('recoveryNewPassword',this)"><svg class="visibility-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="eye-open"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></g><g class="eye-closed" style="display:none"><path d="M3 3 21 21"/><path d="M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.9M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.4 4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></g></svg></button></div></label>
+            <button class="btn primary" type="button" onclick="verifySmsRecovery()">Verify code & reset password</button>
+          </div>
+          <div class="account-error" id="recoveryError" aria-live="polite"></div>
+        </div>
+        <div class="account-error" id="loginError"></div>
+        <button class="btn primary" type="submit">Login</button>
+        <p class="account-note">Sign in to sync your vehicle list and private documents with your Traffic Buddy Supabase account across devices. Access is restricted by your account policies.</p>
+      </form>
+
+      <form class="account-form hidden" id="registerForm" onsubmit="registerUser(event)">
+        <label>Full Name
+          <input id="registerName" type="text" required autocomplete="name" placeholder="Your name">
+        </label>
+        <label>Email
+          <input id="registerEmail" type="email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label>Age
+          <input id="registerAge" type="number" min="13" max="120" required inputmode="numeric" placeholder="Your age">
+        </label>
+        <label>Mobile Number
+          <input id="registerPhone" type="tel" required autocomplete="tel" pattern="[+0-9() -]{8,20}" placeholder="+91 9876543210">
+        </label>
+        <label>Password
+          <div class="password-wrap"><input id="registerPassword" type="password" minlength="6" required autocomplete="new-password" placeholder="Minimum 6 characters"><button class="headlight-toggle" type="button" aria-label="Show password" title="Headlight off — password hidden" onclick="togglePassword('registerPassword',this)"><svg class="visibility-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="eye-open"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></g><g class="eye-closed" style="display:none"><path d="M3 3 21 21"/><path d="M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.9M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.4 4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></g></svg></button></div>
+        </label>
+        <label>Re-enter Password
+          <div class="password-wrap"><input id="registerConfirmPassword" type="password" minlength="6" required autocomplete="new-password" placeholder="Enter the same password again"><button class="headlight-toggle" type="button" aria-label="Show password" title="Headlight off — password hidden" onclick="togglePassword('registerConfirmPassword',this)"><svg class="visibility-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="eye-open"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></g><g class="eye-closed" style="display:none"><path d="M3 3 21 21"/><path d="M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.9M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.4 4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></g></svg></button></div>
+        </label>
+        <div class="account-error" id="registerError"></div>
+        <button class="btn primary" type="submit">Create Account</button>
+      </form>
+    </div>
+
+    <div id="profileView" class="hidden">
+      <div class="user-summary">
+        <div class="user-avatar">👤</div>
+        <div><b id="profileName"></b><span id="profileEmail"></span></div>
+      </div>
+
+      <div class="vault-section">
+        <h3>🚗 My Vehicles & Documents</h3>
+        <div id="vehiclesList"></div>
+        <button class="btn primary add-vehicle" onclick="showAddVehicle()">＋ Add Vehicle</button>
+      </div>
+
+      <div id="addVehicleForm" class="detail-card hidden" style="margin-top:12px">
+        <div class="account-form">
+          <label>Vehicle name
+            <input id="vehicleName" type="text" placeholder="My Bike / My Car">
+          </label>
+          <label>Registration Number
+            <input id="vehicleReg" type="text" placeholder="AP00AB1234">
+          </label>
+          <label>Vehicle Type
+            <select id="vehicleType" required>
+              <option value="Motorcycle">Motorcycle / Bike</option>
+              <option value="Scooter">Scooter / Moped</option>
+              <option value="Car">Car</option>
+              <option value="Auto-rickshaw">Auto-rickshaw</option>
+              <option value="Taxi / Cab">Taxi / Cab</option>
+              <option value="Van">Van / Minivan</option>
+              <option value="Bus">Bus</option>
+              <option value="Mini-bus">Mini-bus</option>
+              <option value="Truck">Truck / Lorry</option>
+              <option value="Tipper">Tipper / Dumper</option>
+              <option value="Goods carrier">Goods carrier</option>
+              <option value="Light commercial vehicle">Light commercial vehicle</option>
+              <option value="Tractor">Tractor</option>
+              <option value="Tractor with trailer">Tractor with trailer</option>
+              <option value="Construction / Earthmoving equipment">Construction / Earthmoving equipment</option>
+              <option value="Ambulance">Ambulance</option>
+              <option value="Fire engine">Fire engine</option>
+              <option value="Police vehicle">Police vehicle</option>
+              <option value="Electric vehicle">Other electric vehicle</option>
+              <option value="Other road vehicle">Other road vehicle</option>
+            </select>
+          </label>
+          <div class="account-error" id="vehicleError"></div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="addVehicle()" type="button">Save Vehicle</button>
+            <button class="btn" onclick="hideAddVehicle()" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="logoutUser()">Logout</button>
+      </div>
+      <p class="account-note">Your files are stored in a private Supabase Storage bucket. Only your signed-in account should be able to access its vehicle records and documents. Keep your account password private.</p>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENT UPLOAD OVERLAY -->
+<div class="overlay" id="documentOverlay" onclick="if(event.target===this)closeDocumentUpload()">
+  <div class="account-panel">
+    <div class="account-head">
+      <h2>Upload Vehicle Document</h2>
+      <button class="close-x" onclick="closeDocumentUpload()">✕</button>
+    </div>
+    <div class="account-form">
+      <label>Document Type
+        <select id="documentType">
+          <option>Driving Licence</option>
+          <option>Registration Certificate (RC)</option>
+          <option>Insurance</option>
+          <option>Pollution / PUC Certificate</option>
+          <option>Fitness Certificate</option>
+          <option>Permit</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label>Document Number (optional)
+        <input id="documentNumber" type="text" placeholder="Enter document number">
+      </label>
+      <label>Expiry Date (optional)
+        <input id="documentExpiry" type="date">
+      </label>
+      <label>File
+        <input id="documentFile" type="file" accept=".pdf,image/*">
+      </label>
+      <div class="account-error" id="documentError"></div>
+      <button class="btn primary" onclick="saveDocument()" type="button">Save Document</button>
+      <p class="account-note">Accepted files: PDF, JPG, PNG or WEBP up to 10 MB. Files are stored in your private Supabase vehicle-documents bucket.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
